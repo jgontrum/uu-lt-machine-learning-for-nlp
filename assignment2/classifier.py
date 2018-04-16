@@ -254,8 +254,10 @@ class HingeLoss:
         """Computes the unregularised loss of the linear classifier on the provided data set."""
         loss = 0.0
 
-        ### YOUR CODE HERE ###
         # Compute the hinge loss of the data given weights and bias
+        for X, y in zip(data.features(), data.labels):
+            margin = sum(weights[feature] for feature in X) + bias
+            loss += 1 - y * margin if (y * margin) < 1 else 0
 
         # Divide the loss by the number of examples to make it independent of the data size.
         loss /= len(data)
@@ -263,12 +265,16 @@ class HingeLoss:
 
     @staticmethod
     def gradients(weights, bias, data):
-        """Computes the gradients of the loss function with respect to the weights and bias."""
+        """Compute the gradients of the hinge loss with respect to the weights and bias"""
         weight_gradients = [0.0 for _ in weights]
         bias_gradient = 0.0
 
-        ### YOUR CODE HERE ###
-        # Compute the gradients of the hinge loss with respect to the weights and bias
+        for X, y in zip(data.features(), data.labels):
+            margin = sum(weights[feature] for feature in X) + bias
+
+            bias_gradient += -y if (y * margin) < 1 else 0
+            for feature in X:
+                weight_gradients[feature] += -y if (y * margin) < 1 else 0
 
         # Divide the loss by the number of examples to make it independent of the data size.
         weight_gradients_per_example = [g / len(data) for g in weight_gradients]
