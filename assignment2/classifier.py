@@ -293,19 +293,17 @@ class L2Regulariser:
     @staticmethod
     def loss(weights):
         """Computes the loss term added by the regulariser (a scalar)."""
-        ### YOUR CODE HERE ###
         # Compute the value of the l2 regularisation term.
-        reg_loss = 0.0
+        reg_loss = sum(pow(w, 2) for w in weights)
 
         return reg_loss
 
     @staticmethod
     def gradients(weights):
         """Computes the gradients of the regularisation term with respect to the weights (a vector)."""
-        ### YOUR CODE HERE ###
         # Compute the correct gradient vector corresponding to the l2 loss term.
         # The existing code just returns a vector of zeros. This should be replaced.
-        reg_gradient = [0.0 for _ in weights]
+        reg_gradient = [2 * w for w in weights]
 
         return reg_gradient
 
