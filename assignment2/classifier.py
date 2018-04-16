@@ -185,8 +185,22 @@ def gradient_descent_step(learning_rate, old_weights, old_bias, weight_grads, bi
     # given the learning rate and gradients and return the new weights and bias.
     # Until you've implemented this correctly, we just return the old weights and bias
     # without updating.
-    new_weights = old_weights
-    new_bias = old_bias
+
+    new_weights = list(
+        map(
+            lambda weight_gradient_pair: weight_gradient_pair[0] -
+                                         weight_gradient_pair[1],
+            zip(
+                old_weights,
+                map(
+                    lambda gradient: gradient * learning_rate,
+                    weight_grads
+                )
+            )
+        )
+    )
+
+    new_bias = old_bias - learning_rate * bias_grad
 
     return new_weights, new_bias
 
