@@ -1,22 +1,20 @@
 import collections
-import glob
 import itertools
-import matplotlib.pyplot as pyplot
-# import nltk
-import numpy
-import os
 import sys
 import zipfile
 
 import classifier
-
+import matplotlib.pyplot as pyplot
+# import nltk
+import numpy
 
 if sys.version_info[0] != 3:
     print('Please use Python 3 to run this code.')
     sys.exit(1)
 
 
-def show_stats(title, log, weights, bias, vocabulary, top_n=10):
+def show_stats(title, log, weights, bias, vocabulary, top_n=10,
+               write_to_file="results.csv", configuration=None):
     print(title)
     print()
 
@@ -44,6 +42,21 @@ def show_stats(title, log, weights, bias, vocabulary, top_n=10):
     print()
     print('Top %d negative features:' % top_n)
     print('\n'.join('%g\t%s' % f for f in features[:top_n]))
+
+    if write_to_file:
+        with open(write_to_file, 'a') as f:
+            f.write(",".join([
+                str(configuration['reg_lambda']),
+                str(configuration['learning_rate']),
+                str(configuration['loss_function']),
+                str(configuration['regulariser']),
+                str(configuration['niterations']),
+                str(best_training_loss),
+                str(log[-1]['training_loss_reg']),
+                str(best_validation_loss),
+                str(log[-1]['val_loss']),
+                str(configuration['val_accuracy'])
+            ]) + "\n")
 
 
 def display_log_record(iteration, log_record):
