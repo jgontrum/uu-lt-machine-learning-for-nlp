@@ -1,32 +1,38 @@
 import collections
 import math
+from itertools import chain
+from multiprocessing.pool import Pool
 
 import util
 
+training_data = val_data = test_data = data = None
 
-def main():
+
+def main(reg_lambda, learning_rate, loss_function, regulariser,
+         niterations=10, enable_test_set_scoring=False):
+    global data
     # TRAINING HYPERPARAMETERS
     # Modify the following lines to change the training hyperparameters.
 
     # Regularisation strength
-    reg_lambda = 0.001
+    # reg_lambda = 0.001
 
     # Learning rate
-    learning_rate = 0.001
+    # learning_rate = 0.001
 
     # Number of training iterations
-    niterations = 5
+    # niterations = 10
 
     # Loss function to use (select one and comment out the other)
-    loss_function = LogisticLoss()
+    # loss_function = LogisticLoss()
     # loss_function = HingeLoss()
 
     # Type of regularisation to use (select one and comment out the other)
-    regulariser = L1Regulariser()
+    # regulariser = L1Regulariser()
     # regulariser = L2Regulariser()
 
     # This should only be enabled once you've decided on a final set of hyperparameters
-    enable_test_set_scoring = False
+    # enable_test_set_scoring = False
 
     # Type of features to use. This can be set to 'bigram' or 'unigram+bigram' to use
     # bigram features instead of or in addition to unigram features.
@@ -44,21 +50,7 @@ def main():
     util.run_tests()
 
     # Load the data.
-
-    print()
-    print('===================')
-    print('CLASSIFIER TRAINING')
-    print('===================')
-    print()
-    print('Loading data sets...')
-
-    data_dir = '/local/kurs/ml/2017/assignment2/poldata/poldata.zip'
-    data = util.load_movie_data(data_dir)
-
-    data.select_feature_type(feature_type)
-
-    # Split the data set randomly into training, validation and test sets.
-    training_data, val_data, test_data = data.train_val_test_split()
+    training_data, val_data, test_data, data = load_data(feature_type)
 
     # Train the classifier.
     print('Starting training.')
@@ -77,8 +69,23 @@ def main():
     title = 'Data set: %s - Regulariser: %g - Learning rate: %g' % (data.name, reg_lambda, learning_rate)
 
     print()
-    util.show_stats(title, training_log, weights, bias, data.vocabulary, top_n=20)
-    util.create_plots(title, training_log, weights, log_keys=['training_loss_reg', 'val_loss'])
+
+    # Get final accuracy
+    val_predictions = predict(weights, bias, val_data)
+    val_accuracy = accuracy(val_data.labels, val_predictions)
+
+    util.show_stats(title, training_log, weights, bias, data.vocabulary,
+                    top_n=1,
+                    write_to_file="results.csv",
+                    configuration={
+                        'reg_lambda': reg_lambda,
+                        'learning_rate': learning_rate,
+                        'loss_function': loss_function,
+                        'regulariser': regulariser,
+                        'niterations': niterations,
+                        'val_accuracy': val_accuracy
+                    })
+    # util.create_plots(title, training_log, weights, log_keys=['training_loss_reg', 'val_loss'])
 
     if enable_test_set_scoring:
         # Check the performance on the test set.
@@ -247,6 +254,9 @@ class LogisticLoss:
 
         return weight_gradients_per_example, bias_gradient_per_example
 
+    def __str__(self):
+        return "LogisticLoss"
+
 
 class HingeLoss:
     @staticmethod
@@ -282,6 +292,8 @@ class HingeLoss:
 
         return weight_gradients_per_example, bias_gradient_per_example
 
+    def __str__(self):
+        return "HingeLoss"
 
 class L1Regulariser:
     @staticmethod
@@ -293,6 +305,9 @@ class L1Regulariser:
     def gradients(weights):
         """Computes subgradients of the regularisation term with respect to the weights (a vector)."""
         return [1.0 if w > 0 else -1.0 for w in weights]
+
+    def __str__(self):
+        return "L1Regulariser"
 
 
 class L2Regulariser:
@@ -313,6 +328,73 @@ class L2Regulariser:
 
         return reg_gradient
 
+    def __str__(self):
+        return "L2Regulariser"
+
+
+def exp_range(start, end, max_precision=5):
+    i = start
+    while i <= end:
+        yield i
+        i = round(i * 10, max_precision)
+
+
+def load_data(feature_type):
+    global training_data, val_data, test_data, data
+    if training_data is not None:
+        return training_data, val_data, test_data, data
+
+    print()
+    print('===================')
+    print('CLASSIFIER TRAINING')
+    print('===================')
+    print()
+    print('Loading data sets...')
+
+    data_dir = '/local/kurs/ml/2017/assignment2/poldata/poldata.zip'
+
+    data = util.load_movie_data(data_dir)
+
+    data.select_feature_type(feature_type)
+
+    # Split the data set randomly into training, validation and test sets.
+    training_data, val_data, test_data = data.train_val_test_split()
+    return training_data, val_data, test_data, data
+
+
+def train_with_args(args):
+    main(**args)
 
 if __name__ == '__main__':
-    main()
+
+    niterations = 10
+
+    exponential_sequence = sorted(chain(
+        exp_range(0.0001, 1.0), exp_range(0.0003, 3.0)))
+
+    configurations = []
+
+    for reg_lambda in exponential_sequence:
+        for learning_rate in exponential_sequence:
+            for loss_function in [LogisticLoss(), HingeLoss()]:
+                for regulariser in [L1Regulariser(), L2Regulariser()]:
+                    configurations.append({
+                        "reg_lambda": reg_lambda,
+                        "learning_rate": learning_rate,
+                        "loss_function": loss_function,
+                        "regulariser": regulariser,
+                        "niterations": 10
+                    })
+
+    with Pool(processes=10) as pool:
+        output = pool.map(train_with_args, configurations)
+        pool.close()
+        pool.join()
+
+# default_configuration
+# main(reg_lambda=0.001,
+#      learning_rate=0.001,
+#      loss_function=LogisticLoss(),
+#      regulariser=L1Regulariser(),
+#      niterations=10
+#      )
