@@ -43,7 +43,7 @@ def show_stats(title, log, weights, bias, vocabulary, top_n=10,
     print('Top %d negative features:' % top_n)
     print('\n'.join('%g\t%s' % f for f in features[:top_n]))
 
-    if write_to_file:
+    if write_to_file and configuration:
         with open(write_to_file, 'a') as f:
             f.write(",".join([
                 str(configuration['reg_lambda']),

@@ -363,7 +363,10 @@ def load_data(feature_type):
 
 
 def train_with_args(args):
-    main(**args)
+    try:
+        main(**args)
+    except:
+        print("ERROR with parameters:" + str(args))
 
 if __name__ == '__main__':
 
@@ -390,11 +393,3 @@ if __name__ == '__main__':
         output = pool.map(train_with_args, configurations)
         pool.close()
         pool.join()
-
-# default_configuration
-# main(reg_lambda=0.001,
-#      learning_rate=0.001,
-#      loss_function=LogisticLoss(),
-#      regulariser=L1Regulariser(),
-#      niterations=10
-#      )
