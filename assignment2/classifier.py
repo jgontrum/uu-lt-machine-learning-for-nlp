@@ -174,6 +174,13 @@ def gradient_descent_step(learning_rate, old_weights, old_bias, weight_grads, bi
     # Until you've implemented this correctly, we just return the old weights and bias
     # without updating.
 
+    # Explanation:
+    # First multiple each gradient in `weight_grads` with the learning rate.
+    # Then, these values have to be subtracted from the weights vector.
+    # Therefore, we build a list of tuples (`zip()`) of the weight and the
+    # gradient. Eventually, we generate a list that contains this subtraction.
+    # I apologize if this is too nested, but in a 'real world' scenario,
+    # one would of course use a library for vector operations.
     new_weights = list(
         map(
             lambda weight_gradient_pair: weight_gradient_pair[0] -
@@ -188,6 +195,7 @@ def gradient_descent_step(learning_rate, old_weights, old_bias, weight_grads, bi
         )
     )
 
+    # Do the same for the bias, but as it is only one value, it's much simpler.
     new_bias = old_bias - learning_rate * bias_grad
 
     return new_weights, new_bias
