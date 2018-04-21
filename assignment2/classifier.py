@@ -1,39 +1,20 @@
 import collections
 import math
+import pprint
 
 import util
 
+training_data = val_data = test_data = data = None
 
-def main():
-    # TRAINING HYPERPARAMETERS
-    # Modify the following lines to change the training hyperparameters.
 
-    # Regularisation strength
-    reg_lambda = 0.001
-
-    # Learning rate
-    learning_rate = 0.001
-
-    # Number of training iterations
-    niterations = 5
-
-    # Loss function to use (select one and comment out the other)
-    loss_function = LogisticLoss()
-    # loss_function = HingeLoss()
-
-    # Type of regularisation to use (select one and comment out the other)
-    regulariser = L1Regulariser()
-    # regulariser = L2Regulariser()
-
-    # This should only be enabled once you've decided on a final set of hyperparameters
-    enable_test_set_scoring = False
+def main(reg_lambda, learning_rate, loss_function, regulariser,
+         niterations=10, enable_test_set_scoring=False, **kwargs):
+    global data
 
     # Type of features to use. This can be set to 'bigram' or 'unigram+bigram' to use
     # bigram features instead of or in addition to unigram features.
     # Not required for assignment.
     feature_type = 'unigram'
-
-    # END OF HYPERPARAMETERS
 
     # First test the parts to be implemented and warn if something's wrong.
     print('=============')
@@ -44,21 +25,7 @@ def main():
     util.run_tests()
 
     # Load the data.
-
-    print()
-    print('===================')
-    print('CLASSIFIER TRAINING')
-    print('===================')
-    print()
-    print('Loading data sets...')
-
-    data_dir = '/local/kurs/ml/2017/assignment2/poldata/poldata.zip'
-    data = util.load_movie_data(data_dir)
-
-    data.select_feature_type(feature_type)
-
-    # Split the data set randomly into training, validation and test sets.
-    training_data, val_data, test_data = data.train_val_test_split()
+    training_data, val_data, test_data, data = load_data(feature_type)
 
     # Train the classifier.
     print('Starting training.')
@@ -74,10 +41,31 @@ def main():
     print()
 
     # Display some useful statistics about the model and the training process.
-    title = 'Data set: %s - Regulariser: %g - Learning rate: %g' % (data.name, reg_lambda, learning_rate)
+    title = 'Data set: %s - Regulariser(%s): %g - Learning rate: %g ' \
+            '- Loss Function: %s' % (
+                data.name, regulariser, reg_lambda, learning_rate,
+                loss_function)
 
     print()
-    util.show_stats(title, training_log, weights, bias, data.vocabulary, top_n=20)
+
+    # Get final accuracy
+    val_predictions = predict(weights, bias, val_data)
+    val_accuracy = accuracy(val_data.labels, val_predictions)
+
+    print('Accuracy: %g' % val_accuracy)
+
+    util.show_stats(title, training_log, weights, bias, data.vocabulary,
+                    top_n=1,
+                    write_to_file="results.csv",
+                    configuration={
+                        'reg_lambda': reg_lambda,
+                        'learning_rate': learning_rate,
+                        'loss_function': loss_function,
+                        'regulariser': regulariser,
+                        'niterations': niterations,
+                        'val_accuracy': val_accuracy
+                    })
+
     util.create_plots(title, training_log, weights, log_keys=['training_loss_reg', 'val_loss'])
 
     if enable_test_set_scoring:
@@ -180,7 +168,7 @@ def train(training_data, val_data, loss_fn, regulariser, reg_lambda, learning_ra
 
 def gradient_descent_step(learning_rate, old_weights, old_bias, weight_grads, bias_grad):
     """Performs a gradient descent update on the weights and the bias and returns the new values."""
-    ### YOUR CODE HERE ###
+
     # Calculate the weight vector and the bias after a single gradient descent update
     # given the learning rate and gradients and return the new weights and bias.
     # Until you've implemented this correctly, we just return the old weights and bias
@@ -247,6 +235,9 @@ class LogisticLoss:
 
         return weight_gradients_per_example, bias_gradient_per_example
 
+    def __str__(self):
+        return "LogisticLoss"
+
 
 class HingeLoss:
     @staticmethod
@@ -282,6 +273,8 @@ class HingeLoss:
 
         return weight_gradients_per_example, bias_gradient_per_example
 
+    def __str__(self):
+        return "HingeLoss"
 
 class L1Regulariser:
     @staticmethod
@@ -293,6 +286,9 @@ class L1Regulariser:
     def gradients(weights):
         """Computes subgradients of the regularisation term with respect to the weights (a vector)."""
         return [1.0 if w > 0 else -1.0 for w in weights]
+
+    def __str__(self):
+        return "L1Regulariser"
 
 
 class L2Regulariser:
@@ -313,6 +309,44 @@ class L2Regulariser:
 
         return reg_gradient
 
+    def __str__(self):
+        return "L2Regulariser"
+
+
+def load_data(feature_type):
+    global training_data, val_data, test_data, data
+    if training_data is not None:
+        return training_data, val_data, test_data, data
+
+    print()
+    print('===================')
+    print('CLASSIFIER TRAINING')
+    print('===================')
+    print()
+    print('Loading data sets...')
+
+    data_dir = '/local/kurs/ml/2017/assignment2/poldata/poldata.zip'
+
+    data = util.load_movie_data(data_dir)
+
+    data.select_feature_type(feature_type)
+
+    # Split the data set randomly into training, validation and test sets.
+    training_data, val_data, test_data = data.train_val_test_split()
+    return training_data, val_data, test_data, data
 
 if __name__ == '__main__':
-    main()
+    configurations = []
+
+    configurations.append({
+        "reg_lambda": 0.003,
+        "learning_rate": 0.003,
+        "loss_function": LogisticLoss(),
+        "regulariser": L1Regulariser(),
+        "niterations": 10,
+        'enable_test_set_scoring': True
+    })
+
+    for configuration in configurations:
+        main(**configuration)
+        pprint.pprint(configuration, indent=2)
