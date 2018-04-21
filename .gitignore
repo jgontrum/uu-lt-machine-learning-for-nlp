@@ -107,3 +107,5 @@ venv.bak/
 
 .idea/
 assignment1/*.arff
+*.csv
+.*
