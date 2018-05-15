@@ -1,9 +1,11 @@
-.PHONY: clean
+.PHONY: clean jupyter jupyter-headless
 
 TAG=$(shell git symbolic-ref -q --short HEAD)
 
 # Set the environment variable `PYTHON3` to specify the Python binary used.
 PYTHON3?=python3.4
+
+PORT=8899
 
 all: env/bin/python
 
@@ -16,7 +18,10 @@ env/bin/python:
 	env/bin/jupyter tensorboard enable --user
 
 jupyter:
-    env/bin/jupyer notebook
+	env/bin/jupyter notebook
+
+jupyter-headless:
+	env/bin/jupyter notebook --no-browser --port=$(PORT)
 
 clean:
 	rm -rfv bin develop-eggs dist downloads eggs env parts .cache build
