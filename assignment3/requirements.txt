@@ -1,6 +1,10 @@
-autopep8==1.3.5
 jupyter==1.0.0
-jupyter-nbextensions-configurator==0.4.0
-jupyter-tensorboard==0.1.6
+jupyter_contrib_nbextensions
 tensorflow==1.4.0
 ipyparallel==6.1.1
+pandas==0.20.3
+plotly==2.6.0
+ipykernel==4.8.2
+autopep8
+bleach==1.5.0
+matplotlib==2.2.2

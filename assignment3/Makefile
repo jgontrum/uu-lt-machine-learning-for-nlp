@@ -10,12 +10,15 @@ PORT=8899
 all: env/bin/python
 
 env/bin/python:
+	export PYTHONPATH=
 	$(PYTHON3) -m venv env
 	env/bin/pip install --upgrade pip
+	env/bin/pip install --upgrade setuptools
 	env/bin/pip install wheel
 	env/bin/pip install -r requirements.txt
+	env/bin/jupyter contrib nbextension install --user
 	env/bin/jupyter nbextensions_configurator enable --user
-	env/bin/jupyter tensorboard enable --user
+	env/bin/ipython kernel install --name "venv" --user
 
 jupyter:
 	env/bin/jupyter notebook
